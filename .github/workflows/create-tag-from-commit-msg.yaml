@@ -25,7 +25,7 @@ jobs:
             github.git.createTag({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              type: commit,
+              type: "commit",
               message: "${{ github.event.head_commit.message }}",
               object: context.sha,
               tag: "v${{ env.to_create_tag }}}"
