@@ -22,11 +22,9 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
-            github.git.createTag({
+            github.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              type: "commit",
-              message: "${{ github.event.head_commit.message }}",
-              object: context.sha,
-              tag: "v${{ env.to_create_tag }}}"
+              ref: "refs/tags/v${{ env.to_create_tag }}",
+              sha: context.sha
             })
