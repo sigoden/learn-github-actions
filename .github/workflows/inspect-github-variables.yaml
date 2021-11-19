@@ -10,9 +10,7 @@ jobs:
         ubuntu-version: ["20.04"]
     steps:
       - name: Dump Env context
-        env:
-          ENV_CONTEXT: ${{ toJSON(env) }}
-        run: echo "$ENV_CONTEXT"
+        run: env
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
