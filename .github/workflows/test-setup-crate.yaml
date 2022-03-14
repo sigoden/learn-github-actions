@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Setup argc 
-      uses: 
+      uses: extractions/setup-crate@v1 
       with:
         owner: sigoden
         name: argc
