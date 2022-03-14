@@ -13,9 +13,9 @@ jobs:
       uses: extractions/setup-crate@v1 
       with:
         owner: sigoden
-        name: argc -h
+        name: argc
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # avoid rate limiting errors
     - name: Test
-      run: argc -V
+      run: argc -h
       shell: bash
