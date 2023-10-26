@@ -3,8 +3,9 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup upterm session
-      uses: lhotari/action-upterm@v1
+      uses: mxschmitt/action-tmate@v3

@@ -8,7 +8,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup argc 
       uses: extractions/setup-crate@v1 
       with:
@@ -17,5 +17,5 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # avoid rate limiting errors
     - name: Test
-      run: argc -h
+      run: argc --argc-help
       shell: bash
