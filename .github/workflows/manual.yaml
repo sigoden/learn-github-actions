@@ -3,17 +3,15 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    # runs-on: ubuntu-latest
     runs-on: windows-latest
     steps:
 
     - name: Install Rust Toolchain Components
       uses: dtolnay/rust-toolchain@stable
       with:
-        targets: ${{ matrix.target }}
+        targets: aarch64-pc-windows-msvc
 
     - name: Install cross
-      if: matrix.use-cross
       uses: taiki-e/install-action@v2
       with:
         tool: cross
@@ -21,6 +19,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         repository: sigoden/aichat
+
+    - run: cross build --locked --release --target=aarch64-pc-windows-msvc
+      shell: bash
 
     - name: Setup upterm session
       uses: mxschmitt/action-tmate@v3
