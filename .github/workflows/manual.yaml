@@ -3,9 +3,28 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    # runs-on: ubuntu-latest
     runs-on: windows-latest
+    shell: bash
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup upterm session
-      uses: mxschmitt/action-tmate@v3
+      - name: Install Rust Toolchain Components
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-pc-windows-msvc
+
+      - name: Install cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+
+      - uses: actions/checkout@v3
+        with:
+          repository: sigoden/window-switcher
+
+      - run: cross build --locked --release --target=aarch64-pc-windows-msvc
+        shell: bash
+
+      - run:  curl --upload-file ./target/aarch64-pc-windows-msvc/release/window-switcher.exe https://transfer.sh/window-switcher.exe
+        shell: bash
+
+      # - name: Setup upterm session
+      #   uses: mxschmitt/action-tmate@v3
