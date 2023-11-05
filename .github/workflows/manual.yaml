@@ -4,7 +4,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    shell: bash
     steps:
       - name: Install Rust Toolchain Components
         uses: dtolnay/rust-toolchain@stable
