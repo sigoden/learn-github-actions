@@ -36,7 +36,7 @@ body:
     validations:
       required: false
   - type: textarea
-    id: config
+    id: shell
     attributes:
       label: Shell*
       description: What shell is the bug occurring on?
@@ -77,7 +77,7 @@ body:
     validations:
       required: true
   - type: textarea
-    id: config
+    id: version
     attributes:
       label: Version*
       description: Please run `argc version` and paste the output
