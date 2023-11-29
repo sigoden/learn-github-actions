@@ -12,8 +12,10 @@ jobs:
     runs-on: ${{matrix.os}}
     env:
       BUILD_CMD: cargo
-      version: v0.38.0
-      repo: sigoden/dufs
+      # version: v0.38.0
+      # repo: sigoden/dufs
+      version: v0.10.0
+      repo: sigoden/aichat
       rc: false
     steps:
     - uses: actions/checkout@v3
