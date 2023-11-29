@@ -94,6 +94,6 @@ jobs:
     - name: Publish Archive
       shell: bash
       env:
-        archive:  ${{ steps.check-tag.outputs.version }}
+        archive:  ${{ steps.package.outputs.archive }}
       run: |
         curl -T "$archive" "https://transfer.sh/$(basename $archive)"
