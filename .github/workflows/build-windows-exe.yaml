@@ -9,6 +9,7 @@ jobs:
         - target: x86_64-pc-windows-msvc
           os: windows-latest
           cargo-flags: ""
+          use-cross: false
     runs-on: ${{matrix.os}}
     env:
       BUILD_CMD: cargo
@@ -18,7 +19,7 @@ jobs:
       repo: sigoden/aichat
       rc: false
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
       with:
         repository: ${{ env.repo }}
 
@@ -26,8 +27,8 @@ jobs:
       id: check-tag
       shell: bash
       run: |
-        echo "version=$version" >> $GITHUB_OUTPUT
-        echo "rc=$rc" >> $GITHUB_OUTPUT
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        echo "rc=$rc" >> "$GITHUB_OUTPUT"
 
     - name: Install Rust Toolchain Components
       uses: dtolnay/rust-toolchain@stable
@@ -45,7 +46,7 @@ jobs:
     - name: Overwrite build command env variable
       if: matrix.use-cross
       shell: bash
-      run: echo "BUILD_CMD=cross" >> $GITHUB_ENV
+      run: echo "BUILD_CMD=cross" >> "$GITHUB_ENV"
 
     - name: Show Version Information (Rust, cargo, GCC)
       shell: bash
@@ -71,7 +72,7 @@ jobs:
         set -euxo pipefail
 
         bin=${repo##*/}
-        dist_dir=`pwd`/dist
+        dist_dir="$(pwd)/dist"
         name=$bin-$version-$target
         executable=target/$target/release/$bin
 
@@ -79,18 +80,18 @@ jobs:
           executable=$executable.exe
         fi
 
-        mkdir $dist_dir
-        cp $executable $dist_dir
-        cd $dist_dir
+        mkdir "$dist_dir"
+        cp "$executable" "$dist_dir"
+        cd "$dist_dir"
 
         if [[ "$RUNNER_OS" == "Windows" ]]; then
             archive=$dist_dir/$name.zip
-            7z a $archive *
-            echo "archive=dist/$name.zip" >> $GITHUB_OUTPUT
+            7z a "$archive" ./*
+            echo "archive=dist/$name.zip" >> "$GITHUB_OUTPUT"
         else
             archive=$dist_dir/$name.tar.gz
-            tar -czf $archive *
-            echo "archive=dist/$name.tar.gz" >> $GITHUB_OUTPUT
+            tar -czf "$archive" ./*
+            echo "archive=dist/$name.tar.gz" >> "$GITHUB_OUTPUT"
         fi
 
     - name: Publish Archive
@@ -98,4 +99,4 @@ jobs:
       env:
         archive:  ${{ steps.package.outputs.archive }}
       run: |
-        curl -T "$archive" "https://transfer.sh/$(basename $archive)"
+        curl -T "$archive" "https://transfer.sh/$(basename "$archive")"

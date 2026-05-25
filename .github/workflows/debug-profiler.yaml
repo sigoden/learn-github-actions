@@ -1,0 +1,195 @@
+name: CI Debug Profiler (Industrial)
+
+on:
+  workflow_dispatch:
+    inputs:
+      enable_network_test:
+        description: "Run network connectivity test"
+        required: false
+        default: "false"
+      extra_debug:
+        description: "Enable extra verbose debug"
+        required: false
+        default: "false"
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # -----------------------------
+      # 1. Build structured report
+      # -----------------------------
+      - name: Collect GitHub Context
+        id: gh
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p debug-report
+
+          cat > debug-report/github.json << 'EOF'
+          ${{ toJSON(github) }}
+          EOF
+
+          cat > debug-report/job.json << 'EOF'
+          ${{ toJSON(job) }}
+          EOF
+
+          cat > debug-report/runner.json << 'EOF'
+          ${{ toJSON(runner) }}
+          EOF
+
+          cat > debug-report/strategy.json << 'EOF'
+          ${{ toJSON(strategy) }}
+          EOF
+
+          cat > debug-report/matrix.json << 'EOF'
+          ${{ toJSON(matrix) }}
+          EOF
+
+          cat > debug-report/event.json << 'EOF'
+          ${{ toJSON(github.event) }}
+          EOF
+
+      # -----------------------------
+      # 2. Environment snapshot
+      # -----------------------------
+      - name: Capture Environment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p debug-report
+
+          printenv | sort > debug-report/env.txt
+          export -p > debug-report/export.txt
+
+      # -----------------------------
+      # 3. System / runner diagnostics
+      # -----------------------------
+      - name: System diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > debug-report/system.json << EOF
+          {
+            "os": "$(uname -a)",
+            "kernel": "$(uname -r)",
+            "user": "$(whoami)",
+            "pwd": "$(pwd)",
+            "shell": "${SHELL}",
+            "cpu_count": "$(nproc)",
+            "utc_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      # -----------------------------
+      # 4. Feature flags / inputs
+      # -----------------------------
+      - name: Capture Inputs + Vars
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > debug-report/inputs.json << 'EOF'
+          ${{ toJSON(inputs) }}
+          EOF
+
+          cat > debug-report/vars.json << 'EOF'
+          ${{ toJSON(vars) }}
+          EOF
+
+      # -----------------------------
+      # 5. Secrets existence check (SAFE)
+      # -----------------------------
+      - name: Secrets presence check (no values)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > debug-report/secrets.json << EOF
+          {
+            "GITHUB_TOKEN_present": $([ -n "${{ secrets.GITHUB_TOKEN }}" ] && echo true || echo false),
+            "CUSTOM_SECRET_present": $([ -n "${{ secrets.CUSTOM_SECRET }}" ] && echo true || echo false)
+          }
+          EOF
+
+      # -----------------------------
+      # 6. Optional network test
+      # -----------------------------
+      - name: Network diagnostics
+        if: ${{ inputs.enable_network_test == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p debug-report/network
+
+          curl -I https://github.com > debug-report/network/github_headers.txt || true
+          curl -s https://api.ipify.org > debug-report/network/ip.txt || true
+          nslookup github.com > debug-report/network/dns.txt || true
+
+      # -----------------------------
+      # 7. Optional verbose debug
+      # -----------------------------
+      - name: Extra debug dump
+        if: ${{ inputs.extra_debug == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "==== PROC SELF ENV ====" > debug-report/extra.txt
+          cat /proc/self/environ | tr '\0' '\n' >> debug-report/extra.txt || true
+
+          echo "==== MOUNT INFO ====" >> debug-report/extra.txt
+          mount >> debug-report/extra.txt || true
+
+      # -----------------------------
+      # 8. Generate unified report
+      # -----------------------------
+      - name: Build unified JSON report
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 << 'PY'
+          import json, pathlib
+
+          def load(p):
+              try:
+                  return json.loads(pathlib.Path(p).read_text())
+              except Exception:
+                  return pathlib.Path(p).read_text()
+
+          report = {
+              "github": load("debug-report/github.json"),
+              "job": load("debug-report/job.json"),
+              "runner": load("debug-report/runner.json"),
+              "strategy": load("debug-report/strategy.json"),
+              "matrix": load("debug-report/matrix.json"),
+              "event": load("debug-report/event.json"),
+              "env_sample": open("debug-report/env.txt").read().splitlines()[:200],
+              "system": load("debug-report/system.json"),
+              "inputs": load("debug-report/inputs.json"),
+              "vars": load("debug-report/vars.json"),
+              "secrets": load("debug-report/secrets.json"),
+          }
+
+          pathlib.Path("debug-report/report.json").write_text(
+              json.dumps(report, indent=2)
+          )
+          PY
+
+      # -----------------------------
+      # 9. Upload artifact
+      # -----------------------------
+      - name: Upload debug artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-debug-report
+          path: debug-report/
